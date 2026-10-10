@@ -11,7 +11,8 @@ export const Navbar: React.FC = () => {
     setActivePortal,
     notifications,
     markNotificationAsRead,
-    resetSystemData
+    resetSystemData,
+    processDemoApplications
   } = useApp()
 
   const [showNotifications, setShowNotifications] = useState(false)
@@ -51,6 +52,11 @@ export const Navbar: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-3">
+            {/* SQLite Status Badge */}
+            <span className="hidden lg:inline text-[10px] font-mono px-2 py-1 bg-slate-100 text-slate-700 rounded border border-slate-200">
+              SQLite: loan_rangers.db
+            </span>
+
             {/* Notifications Trigger */}
             <button
               onClick={() => setShowNotifications(!showNotifications)}
@@ -59,12 +65,23 @@ export const Navbar: React.FC = () => {
               Notifications {unreadCount > 0 ? `[${unreadCount}]` : `[0]`}
             </button>
 
+            {/* Process Demo Applications Trigger */}
+            <button
+              onClick={async () => {
+                await processDemoApplications()
+              }}
+              className="text-xs font-medium px-2.5 py-1.5 rounded border border-slate-900 bg-slate-900 text-white hover:bg-slate-800 transition-colors"
+              title="Dynamically runs the 10-rule credit engine for multiple client names"
+            >
+              Process Demo Applications
+            </button>
+
             {/* Reset Data Trigger */}
             <button
               onClick={() => setShowResetConfirm(true)}
               className="text-xs font-medium px-2.5 py-1.5 rounded border border-rose-200 text-rose-700 bg-rose-50/50 hover:bg-rose-100/50 transition-colors"
             >
-              Reset Seed Data
+              Reset SQLite Data
             </button>
 
             {/* Role Switcher */}

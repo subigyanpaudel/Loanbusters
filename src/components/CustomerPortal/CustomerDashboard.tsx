@@ -9,7 +9,8 @@ export const CustomerDashboard: React.FC = () => {
     applications,
     setCustomerTab,
     setSelectedApplicationId,
-    retryBureauCheck
+    retryBureauCheck,
+    clearClientLoanProcessing
   } = useApp()
 
   const customerProfile = customers[currentUser.id] || customers['USR-CUST-001']
@@ -68,11 +69,25 @@ export const CustomerDashboard: React.FC = () => {
 
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => setCustomerTab('new_application')}
+              onClick={async () => {
+                await clearClientLoanProcessing(customerProfile.id)
+                setCustomerTab('new_application')
+              }}
               className="px-4 py-2 bg-slate-900 text-white rounded text-xs font-semibold hover:bg-slate-800 transition-colors"
             >
               Start New Auto Loan Application
             </button>
+            {userApplications.length > 0 && (
+              <button
+                onClick={async () => {
+                  await clearClientLoanProcessing(customerProfile.id)
+                }}
+                className="px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700 rounded text-xs font-medium hover:bg-rose-100 transition-colors"
+                title="Remove previous loan processing records for this customer"
+              >
+                Clear Previous Processing
+              </button>
+            )}
             <button
               onClick={() => setCustomerTab('my_applications')}
               className="px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded text-xs font-medium hover:bg-slate-50 transition-colors"

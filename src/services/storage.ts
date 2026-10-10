@@ -13,18 +13,18 @@ import {
 import { evaluateCreditApplication } from './creditEngine'
 
 const STORAGE_KEYS = {
-  USERS: 'loan_rangers_users_v1',
-  CURRENT_USER: 'loan_rangers_current_user_v1',
-  VEHICLES: 'loan_rangers_vehicles_v1',
-  DEALERS: 'loan_rangers_dealers_v1',
-  QUOTATIONS: 'loan_rangers_quotations_v1',
-  CUSTOMERS: 'loan_rangers_customers_v1',
-  APPLICATIONS: 'loan_rangers_applications_v1',
-  POLICY: 'loan_rangers_policy_v1',
-  POLICY_VERSIONS: 'loan_rangers_policy_versions_v1',
-  AUDIT_LOGS: 'loan_rangers_audit_logs_v1',
-  NOTIFICATIONS: 'loan_rangers_notifications_v1',
-  INITIALIZED: 'loan_rangers_initialized_v1'
+  USERS: 'loan_rangers_users_v2',
+  CURRENT_USER: 'loan_rangers_current_user_v2',
+  VEHICLES: 'loan_rangers_vehicles_v2',
+  DEALERS: 'loan_rangers_dealers_v2',
+  QUOTATIONS: 'loan_rangers_quotations_v2',
+  CUSTOMERS: 'loan_rangers_customers_v2',
+  APPLICATIONS: 'loan_rangers_applications_v2',
+  POLICY: 'loan_rangers_policy_v2',
+  POLICY_VERSIONS: 'loan_rangers_policy_versions_v2',
+  AUDIT_LOGS: 'loan_rangers_audit_logs_v2',
+  NOTIFICATIONS: 'loan_rangers_notifications_v2',
+  INITIALIZED: 'loan_rangers_initialized_v2'
 }
 
 export const INITIAL_USERS: User[] = [
@@ -34,6 +34,34 @@ export const INITIAL_USERS: User[] = [
     role: 'customer',
     email: 'aarav.sharma@example.com',
     maskedAccount: 'ACC-****-4921'
+  },
+  {
+    id: 'USR-CUST-002',
+    name: 'Sunita KC',
+    role: 'customer',
+    email: 'sunita.kc@example.com',
+    maskedAccount: 'ACC-****-7814'
+  },
+  {
+    id: 'USR-CUST-003',
+    name: 'Deepak Adhikari',
+    role: 'customer',
+    email: 'deepak.adhikari@example.com',
+    maskedAccount: 'ACC-****-3312'
+  },
+  {
+    id: 'USR-CUST-004',
+    name: 'Pooja Bhattarai',
+    role: 'customer',
+    email: 'pooja.bhattarai@example.com',
+    maskedAccount: 'ACC-****-5520'
+  },
+  {
+    id: 'USR-CUST-005',
+    name: 'Rohan Shrestha',
+    role: 'customer',
+    email: 'rohan.shrestha@example.com',
+    maskedAccount: 'ACC-****-9104'
   },
   {
     id: 'USR-OFFICER-001',
@@ -179,7 +207,7 @@ export const INITIAL_QUOTATIONS: Quotation[] = [
     variant: 'EX 1.5 Petrol MT',
     eligiblePrice: 4000000,
     quotationDate: '2026-10-01',
-    expiryDate: '2026-10-31',
+    expiryDate: '2026-11-30',
     status: 'active'
   },
   {
@@ -192,7 +220,7 @@ export const INITIAL_QUOTATIONS: Quotation[] = [
     variant: 'HTK Plus 1.5 Petrol',
     eligiblePrice: 4500000,
     quotationDate: '2026-10-02',
-    expiryDate: '2026-10-31',
+    expiryDate: '2026-11-30',
     status: 'active'
   },
   {
@@ -205,7 +233,7 @@ export const INITIAL_QUOTATIONS: Quotation[] = [
     variant: 'Empowered Plus LR',
     eligiblePrice: 4300000,
     quotationDate: '2026-10-03',
-    expiryDate: '2026-11-02',
+    expiryDate: '2026-11-30',
     status: 'active'
   },
   {
@@ -218,7 +246,7 @@ export const INITIAL_QUOTATIONS: Quotation[] = [
     variant: 'Superior 60.48 kWh',
     eligiblePrice: 5600000,
     quotationDate: '2026-10-04',
-    expiryDate: '2026-11-03',
+    expiryDate: '2026-11-30',
     status: 'active'
   },
   {
@@ -264,8 +292,8 @@ export const INITIAL_CUSTOMERS: Record<string, CustomerProfile> = {
     },
     blacklistStatus: 'clean'
   },
-  'CUST-SUNITA': {
-    id: 'CUST-SUNITA',
+  'USR-CUST-002': {
+    id: 'USR-CUST-002',
     fullName: 'Sunita KC',
     maskedAccount: 'ACC-****-7814',
     citizenNumber: '27-02-76-11492',
@@ -291,8 +319,8 @@ export const INITIAL_CUSTOMERS: Record<string, CustomerProfile> = {
     },
     blacklistStatus: 'clean'
   },
-  'CUST-DEEPAK': {
-    id: 'CUST-DEEPAK',
+  'USR-CUST-003': {
+    id: 'USR-CUST-003',
     fullName: 'Deepak Adhikari',
     maskedAccount: 'ACC-****-3312',
     citizenNumber: '27-01-69-99412',
@@ -317,6 +345,60 @@ export const INITIAL_CUSTOMERS: Record<string, CustomerProfile> = {
       creditBureauScore: 490
     },
     blacklistStatus: 'confirmed_match'
+  },
+  'USR-CUST-004': {
+    id: 'USR-CUST-004',
+    fullName: 'Pooja Bhattarai',
+    maskedAccount: 'ACC-****-5520',
+    citizenNumber: '27-01-79-11029',
+    dateOfBirth: '1997-02-18',
+    age: 29,
+    address: 'Lazimpat, Kathmandu, Nepal',
+    phone: '+977-9861112233',
+    email: 'pooja.bhattarai@example.com',
+    kycStatus: 'verified',
+    kycVerifiedDate: '2026-05-01',
+    consentGiven: true,
+    consentTimestamp: '2026-10-08T08:00:00Z',
+    consentVersion: 'v2.1-2026',
+    salaryMonthlyGross: 180000,
+    salaryNetDeposit: 145000,
+    salaryHistoryMonths: [145000, 145000, 145000, 145000, 145000, 145000],
+    existingMonthlyDebt: 18000,
+    creditHistorySummary: {
+      hasEstablishedHistory: true,
+      overdueBalance: 0,
+      maxDaysLate12m: 0,
+      creditBureauScore: 810
+    },
+    blacklistStatus: 'clean'
+  },
+  'USR-CUST-005': {
+    id: 'USR-CUST-005',
+    fullName: 'Rohan Shrestha',
+    maskedAccount: 'ACC-****-9104',
+    citizenNumber: '27-01-73-44120',
+    dateOfBirth: '1991-09-12',
+    age: 35,
+    address: 'Kumaripati, Lalitpur, Nepal',
+    phone: '+977-9849998877',
+    email: 'rohan.shrestha@example.com',
+    kycStatus: 'verified',
+    kycVerifiedDate: '2026-02-20',
+    consentGiven: true,
+    consentTimestamp: '2026-10-08T09:00:00Z',
+    consentVersion: 'v2.1-2026',
+    salaryMonthlyGross: 210000,
+    salaryNetDeposit: 170000,
+    salaryHistoryMonths: [170000, 170000, 170000, 170000, 170000, 170000],
+    existingMonthlyDebt: 30000,
+    creditHistorySummary: {
+      hasEstablishedHistory: true,
+      overdueBalance: 0,
+      maxDaysLate12m: 0,
+      creditBureauScore: 760
+    },
+    blacklistStatus: 'clean'
   }
 }
 
@@ -357,349 +439,11 @@ export const INITIAL_POLICY_VERSIONS: PolicyVersionRecord[] = [
   }
 ]
 
-export const INITIAL_APPLICATIONS: Application[] = [
-  // Application 1: Approved In-Principle Benchmark Case
-  // Vehicle: NPR 4,000,000, Loan: NPR 2,400,000, 84 months, Rate: 10.0%, EMI: Rs. 40,035.19, LTV: 60.00%, DSR: 40.02%
-  (() => {
-    const cust = INITIAL_CUSTOMERS['USR-CUST-001']
-    const quo = INITIAL_QUOTATIONS[0]
-    const evalResult = evaluateCreditApplication({
-      customer: cust,
-      quotation: quo,
-      requestedLoanAmount: 2400000,
-      termMonths: 84,
-      policy: INITIAL_POLICY
-    })
-    return {
-      id: 'APP-2026-8810',
-      customerId: cust.id,
-      customerName: cust.fullName,
-      maskedAccount: cust.maskedAccount,
-      quotationId: quo.id,
-      quotation: {
-        vehicleId: quo.vehicleId,
-        make: quo.make,
-        model: quo.model,
-        variant: quo.variant,
-        vehiclePrice: quo.eligiblePrice,
-        dealerName: quo.dealerName,
-        dealerId: quo.dealerId,
-        expiryDate: quo.expiryDate
-      },
-      requestedLoanAmount: 2400000,
-      approvedLoanAmount: 2400000,
-      loanTermMonths: 84,
-      interestRateAnnual: 10.0,
-      emiMonthly: evalResult.calculatedEmi,
-      downPayment: 1600000,
-      ltvPercent: evalResult.calculatedLtv,
-      debtServiceRatioPercent: evalResult.calculatedDsr,
-      verifiedMonthlyGrossIncome: cust.salaryMonthlyGross,
-      existingMonthlyDebt: cust.existingMonthlyDebt,
-      status: 'approved_in_principle',
-      stage: 5,
-      decisionReason: evalResult.decisionReason,
-      decisionDate: '2026-10-08T10:15:00Z',
-      approvalExpiryDate: evalResult.approvalExpiryDate,
-      approvalConditions: evalResult.conditions,
-      bureauStatus: 'available',
-      bureauRetryCount: 0,
-      documents: [
-        {
-          id: 'DOC-001',
-          name: 'Citizenship Certificate Copy',
-          type: 'citizenship_copy',
-          status: 'verified',
-          uploadDate: '2026-10-08T09:40:00Z'
-        },
-        {
-          id: 'DOC-002',
-          name: 'Salary Certificate & Tax Statement',
-          type: 'salary_slip',
-          status: 'verified',
-          uploadDate: '2026-10-08T09:41:00Z',
-          extractedIncome: 150000
-        }
-      ],
-      documentRequests: [],
-      officerNotes: [],
-      ruleResults: evalResult.ruleResults,
-      timeline: [
-        {
-          timestamp: '2026-10-08T09:30:00Z',
-          actor: 'Aarav Sharma',
-          role: 'Customer',
-          action: 'Quotation Confirmed',
-          details: 'Confirmed quotation QUO-2026-101 for Hyundai Creta EX.'
-        },
-        {
-          timestamp: '2026-10-08T09:35:00Z',
-          actor: 'Aarav Sharma',
-          role: 'Customer',
-          action: 'Consent Recorded',
-          details: 'Granted digital consent v2.1-2026 for credit appraisal and bureau query.'
-        },
-        {
-          timestamp: '2026-10-08T09:45:00Z',
-          actor: 'Aarav Sharma',
-          role: 'Customer',
-          action: 'Application Submitted',
-          details: 'Submitted auto loan application for Rs. 2,400,000.'
-        },
-        {
-          timestamp: '2026-10-08T10:15:00Z',
-          actor: 'Automated Credit Engine',
-          role: 'System',
-          action: 'In-Principle Approved',
-          details: 'All 10 rules passed automatically. Preliminary approval valid for 30 calendar days.'
-        }
-      ],
-      version: 1,
-      createdAt: '2026-10-08T09:45:00Z',
-      updatedAt: '2026-10-08T10:15:00Z'
-    } as Application
-  })(),
+// Zero initial applications by default: applications must be processed dynamically!
+export const INITIAL_APPLICATIONS: Application[] = []
 
-  // Application 2: Referred to Officer Queue (Loan exceeds auto limit: Rs. 2,800,000 on Rs. 4,800,000 Vitara)
-  (() => {
-    const cust = INITIAL_CUSTOMERS['USR-CUST-001']
-    const quo = INITIAL_QUOTATIONS[1] // Kia Seltos 4.5M
-    const evalResult = evaluateCreditApplication({
-      customer: cust,
-      quotation: quo,
-      requestedLoanAmount: 2600000, // exceeds 2.5M
-      termMonths: 72,
-      policy: INITIAL_POLICY
-    })
-    return {
-      id: 'APP-2026-8811',
-      customerId: cust.id,
-      customerName: cust.fullName,
-      maskedAccount: cust.maskedAccount,
-      quotationId: quo.id,
-      quotation: {
-        vehicleId: quo.vehicleId,
-        make: quo.make,
-        model: quo.model,
-        variant: quo.variant,
-        vehiclePrice: quo.eligiblePrice,
-        dealerName: quo.dealerName,
-        dealerId: quo.dealerId,
-        expiryDate: quo.expiryDate
-      },
-      requestedLoanAmount: 2600000,
-      loanTermMonths: 72,
-      interestRateAnnual: 10.0,
-      emiMonthly: evalResult.calculatedEmi,
-      downPayment: 1900000,
-      ltvPercent: evalResult.calculatedLtv,
-      debtServiceRatioPercent: evalResult.calculatedDsr,
-      verifiedMonthlyGrossIncome: cust.salaryMonthlyGross,
-      existingMonthlyDebt: cust.existingMonthlyDebt,
-      status: 'referred',
-      stage: 4,
-      decisionReason: 'Referred to Credit Officer: Requested amount exceeds automated limit (Rs. 2,500,000).',
-      bureauStatus: 'available',
-      bureauRetryCount: 0,
-      assignedOfficerId: 'USR-OFFICER-001',
-      assignedOfficerName: 'Bikram Thapa',
-      documents: [
-        {
-          id: 'DOC-101',
-          name: 'Citizenship Copy',
-          type: 'citizenship_copy',
-          status: 'verified',
-          uploadDate: '2026-10-09T08:00:00Z'
-        }
-      ],
-      documentRequests: [
-        {
-          id: 'REQ-001',
-          documentName: 'Tax Clearance Certificate FY 2081/82',
-          requestedBy: 'Bikram Thapa (Credit Officer)',
-          requestDate: '2026-10-09T11:00:00Z',
-          reason: 'Required for high-value loan review exceeding Rs. 2,500,000.',
-          resolved: false
-        }
-      ],
-      officerNotes: [
-        {
-          id: 'NOTE-001',
-          officerName: 'Bikram Thapa',
-          timestamp: '2026-10-09T11:05:00Z',
-          actionType: 'Request Information',
-          note: 'Applicant income track record is strong. Requesting official tax clearance prior to discretionary approval.'
-        }
-      ],
-      ruleResults: evalResult.ruleResults,
-      timeline: [
-        {
-          timestamp: '2026-10-09T07:50:00Z',
-          actor: 'Aarav Sharma',
-          role: 'Customer',
-          action: 'Application Submitted',
-          details: 'Submitted loan request for Rs. 2,600,000 for Kia Seltos.'
-        },
-        {
-          timestamp: '2026-10-09T08:15:00Z',
-          actor: 'Automated Credit Engine',
-          role: 'System',
-          action: 'Referred to Review',
-          details: 'Rule R10 triggered: amount above automated ceiling of Rs. 2,500,000.'
-        },
-        {
-          timestamp: '2026-10-09T11:00:00Z',
-          actor: 'Bikram Thapa',
-          role: 'Credit Officer',
-          action: 'Document Requested',
-          details: 'Requested Tax Clearance Certificate FY 2081/82.'
-        }
-      ],
-      version: 1,
-      createdAt: '2026-10-09T07:50:00Z',
-      updatedAt: '2026-10-09T11:05:00Z'
-    } as Application
-  })(),
-
-  // Application 3: Bureau Outage Pending Simulation
-  (() => {
-    const cust = INITIAL_CUSTOMERS['CUST-SUNITA']
-    const quo = INITIAL_QUOTATIONS[2] // Nexon EV 4.3M
-    const evalResult = evaluateCreditApplication({
-      customer: cust,
-      quotation: quo,
-      requestedLoanAmount: 2200000,
-      termMonths: 60,
-      policy: INITIAL_POLICY,
-      bureauAvailable: false
-    })
-    return {
-      id: 'APP-2026-8812',
-      customerId: cust.id,
-      customerName: cust.fullName,
-      maskedAccount: cust.maskedAccount,
-      quotationId: quo.id,
-      quotation: {
-        vehicleId: quo.vehicleId,
-        make: quo.make,
-        model: quo.model,
-        variant: quo.variant,
-        vehiclePrice: quo.eligiblePrice,
-        dealerName: quo.dealerName,
-        dealerId: quo.dealerId,
-        expiryDate: quo.expiryDate
-      },
-      requestedLoanAmount: 2200000,
-      loanTermMonths: 60,
-      interestRateAnnual: 10.0,
-      emiMonthly: evalResult.calculatedEmi,
-      downPayment: 2100000,
-      ltvPercent: evalResult.calculatedLtv,
-      debtServiceRatioPercent: evalResult.calculatedDsr,
-      verifiedMonthlyGrossIncome: cust.salaryMonthlyGross,
-      existingMonthlyDebt: cust.existingMonthlyDebt,
-      status: 'pending',
-      stage: 3,
-      decisionReason: 'Credit Information Bureau connection timeout. Retrying scheduled check.',
-      bureauStatus: 'outage',
-      bureauRetryCount: 1,
-      documents: [],
-      documentRequests: [],
-      officerNotes: [],
-      ruleResults: evalResult.ruleResults,
-      timeline: [
-        {
-          timestamp: '2026-10-09T14:10:00Z',
-          actor: 'Sunita KC',
-          role: 'Customer',
-          action: 'Application Submitted',
-          details: 'Submitted loan request for Tata Nexon EV.'
-        },
-        {
-          timestamp: '2026-10-09T14:11:00Z',
-          actor: 'Automated Credit Engine',
-          role: 'System',
-          action: 'Bureau Outage Detected',
-          details: 'External Credit Bureau service unresponsive. Application held in PENDING status.'
-        }
-      ],
-      version: 1,
-      createdAt: '2026-10-09T14:10:00Z',
-      updatedAt: '2026-10-09T14:11:00Z'
-    } as Application
-  })()
-]
-
-export const INITIAL_AUDIT_LOGS: AuditLog[] = [
-  {
-    id: 'AUD-001',
-    timestamp: '2026-10-08T09:35:00Z',
-    actorName: 'Aarav Sharma',
-    actorRole: 'Customer',
-    action: 'RECORD_CONSENT',
-    applicationId: 'APP-2026-8810',
-    details: 'Digital consent recorded under Terms Version v2.1-2026. IP hash logged.'
-  },
-  {
-    id: 'AUD-002',
-    timestamp: '2026-10-08T10:15:00Z',
-    actorName: 'Automated Credit Engine',
-    actorRole: 'System',
-    action: 'CREDIT_DECISION_ISSUED',
-    applicationId: 'APP-2026-8810',
-    details: 'In-Principle Approval granted. All 10 credit criteria satisfied.'
-  },
-  {
-    id: 'AUD-003',
-    timestamp: '2026-10-09T08:15:00Z',
-    actorName: 'Automated Credit Engine',
-    actorRole: 'System',
-    action: 'APPLICATION_REFERRED',
-    applicationId: 'APP-2026-8811',
-    details: 'Referred to Credit Officer review. Reason: R10 Authority Limit Exceeded.'
-  },
-  {
-    id: 'AUD-004',
-    timestamp: '2026-10-09T11:00:00Z',
-    actorName: 'Bikram Thapa',
-    actorRole: 'Bank Officer',
-    action: 'REQUEST_DOCUMENT',
-    applicationId: 'APP-2026-8811',
-    details: 'Requested Tax Clearance Certificate FY 2081/82 from applicant.'
-  }
-]
-
-export const INITIAL_NOTIFICATIONS: AppNotification[] = [
-  {
-    id: 'NOTIF-001',
-    recipientRole: 'customer',
-    recipientCustomerId: 'USR-CUST-001',
-    title: 'In-Principle Auto Loan Approval Granted',
-    message: 'Your loan application APP-2026-8810 for Hyundai Creta EX has received preliminary In-Principle Approval.',
-    timestamp: '2026-10-08T10:15:00Z',
-    read: false,
-    applicationId: 'APP-2026-8810'
-  },
-  {
-    id: 'NOTIF-002',
-    recipientRole: 'customer',
-    recipientCustomerId: 'USR-CUST-001',
-    title: 'Action Required: Additional Document Requested',
-    message: 'Credit Officer Bikram Thapa has requested Tax Clearance Certificate FY 2081/82 for application APP-2026-8811.',
-    timestamp: '2026-10-09T11:00:00Z',
-    read: false,
-    applicationId: 'APP-2026-8811'
-  },
-  {
-    id: 'NOTIF-003',
-    recipientRole: 'officer',
-    title: 'New Application in Review Queue',
-    message: 'Application APP-2026-8811 requires manual review (Loan amount exceeds NPR 2,500,000).',
-    timestamp: '2026-10-09T08:15:00Z',
-    read: true,
-    applicationId: 'APP-2026-8811'
-  }
-]
+export const INITIAL_AUDIT_LOGS: AuditLog[] = []
+export const INITIAL_NOTIFICATIONS: AppNotification[] = []
 
 // Storage Access & Mutation Helpers
 
@@ -736,12 +480,136 @@ export function resetAllToDefaultData(): void {
   saveToStorage(STORAGE_KEYS.DEALERS, INITIAL_DEALERS)
   saveToStorage(STORAGE_KEYS.QUOTATIONS, INITIAL_QUOTATIONS)
   saveToStorage(STORAGE_KEYS.CUSTOMERS, INITIAL_CUSTOMERS)
-  saveToStorage(STORAGE_KEYS.APPLICATIONS, INITIAL_APPLICATIONS)
+  saveToStorage(STORAGE_KEYS.APPLICATIONS, [])
   saveToStorage(STORAGE_KEYS.POLICY, INITIAL_POLICY)
   saveToStorage(STORAGE_KEYS.POLICY_VERSIONS, INITIAL_POLICY_VERSIONS)
-  saveToStorage(STORAGE_KEYS.AUDIT_LOGS, INITIAL_AUDIT_LOGS)
-  saveToStorage(STORAGE_KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS)
+  saveToStorage(STORAGE_KEYS.AUDIT_LOGS, [])
+  saveToStorage(STORAGE_KEYS.NOTIFICATIONS, [])
   localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true')
+}
+
+// Dynamically process multiple demo customers through the 10-rule credit engine!
+export function processDemoApplicationsLocally(): Application[] {
+  const customers = getFromStorage<Record<string, CustomerProfile>>(STORAGE_KEYS.CUSTOMERS, INITIAL_CUSTOMERS)
+  const quotations = getFromStorage<Quotation[]>(STORAGE_KEYS.QUOTATIONS, INITIAL_QUOTATIONS)
+  const policy = getFromStorage<CreditPolicy>(STORAGE_KEYS.POLICY, INITIAL_POLICY)
+
+  const scenariosToRun = [
+    { custId: 'USR-CUST-001', quoId: 'QUO-2026-101', amount: 2400000, term: 84 },
+    { custId: 'USR-CUST-002', quoId: 'QUO-2026-103', amount: 2200000, term: 60 },
+    { custId: 'USR-CUST-003', quoId: 'QUO-2026-102', amount: 2000000, term: 60 },
+    { custId: 'USR-CUST-004', quoId: 'QUO-2026-104', amount: 2800000, term: 72 },
+    { custId: 'USR-CUST-005', quoId: 'QUO-2026-103', amount: 2100000, term: 60 }
+  ]
+
+  const createdApps: Application[] = []
+
+  scenariosToRun.forEach((sc) => {
+    const cust = customers[sc.custId]
+    const quo = quotations.find((q) => q.id === sc.quoId) || quotations[0]
+    const evalResult = evaluateCreditApplication({
+      customer: cust,
+      quotation: quo,
+      requestedLoanAmount: sc.amount,
+      termMonths: sc.term,
+      policy
+    })
+
+    const appId = `APP-2026-${Math.floor(1000 + Math.random() * 9000)}`
+    const nowIso = new Date().toISOString()
+
+    const docRequests = []
+    if (cust.kycStatus === 'outdated') {
+      docRequests.push({
+        id: `REQ-${Date.now()}-1`,
+        documentName: 'Updated KYC & Address Verification Form',
+        requestedBy: 'Credit Operations Desk',
+        requestDate: nowIso,
+        reason: 'Existing KYC verification has expired under regulatory guidelines.',
+        resolved: false
+      })
+    }
+
+    const app: Application = {
+      id: appId,
+      customerId: cust.id,
+      customerName: cust.fullName,
+      maskedAccount: cust.maskedAccount,
+      quotationId: quo.id,
+      quotation: {
+        vehicleId: quo.vehicleId,
+        make: quo.make,
+        model: quo.model,
+        variant: quo.variant,
+        vehiclePrice: quo.eligiblePrice,
+        dealerName: quo.dealerName,
+        dealerId: quo.dealerId,
+        expiryDate: quo.expiryDate
+      },
+      requestedLoanAmount: sc.amount,
+      approvedLoanAmount: evalResult.status === 'approved_in_principle' ? sc.amount : undefined,
+      loanTermMonths: sc.term,
+      interestRateAnnual: policy.approvedAnnualInterestRate,
+      emiMonthly: evalResult.calculatedEmi,
+      downPayment: evalResult.downPayment,
+      ltvPercent: evalResult.calculatedLtv,
+      debtServiceRatioPercent: evalResult.calculatedDsr,
+      verifiedMonthlyGrossIncome: cust.salaryMonthlyGross,
+      existingMonthlyDebt: cust.existingMonthlyDebt,
+      status: evalResult.status,
+      stage: evalResult.stage,
+      decisionReason: evalResult.decisionReason,
+      decisionDate: evalResult.status === 'approved_in_principle' || evalResult.status === 'declined' ? nowIso : undefined,
+      approvalExpiryDate: evalResult.approvalExpiryDate,
+      approvalConditions: evalResult.conditions,
+      bureauStatus: 'available',
+      bureauRetryCount: 0,
+      assignedOfficerId: evalResult.status === 'referred' ? 'USR-OFFICER-001' : undefined,
+      assignedOfficerName: evalResult.status === 'referred' ? 'Bikram Thapa' : undefined,
+      documents: [
+        { id: `DOC-${Date.now()}-1`, name: 'Citizenship Certificate', type: 'citizenship_copy', status: 'verified', uploadDate: nowIso },
+        { id: `DOC-${Date.now()}-2`, name: 'Salary Account Credits Record', type: 'salary_slip', status: 'verified', uploadDate: nowIso, extractedIncome: cust.salaryMonthlyGross }
+      ],
+      documentRequests: docRequests,
+      officerNotes: [],
+      ruleResults: evalResult.ruleResults,
+      timeline: [
+        {
+          timestamp: nowIso,
+          actor: cust.fullName,
+          role: 'Customer',
+          action: 'Consent Recorded',
+          details: `Digital consent recorded under ${cust.consentVersion || 'v2.1-2026'}.`
+        },
+        {
+          timestamp: nowIso,
+          actor: cust.fullName,
+          role: 'Customer',
+          action: 'Application Submitted',
+          details: `Submitted loan request for Rs. ${sc.amount.toLocaleString('en-IN')}.`
+        },
+        {
+          timestamp: nowIso,
+          actor: 'Automated Decision Engine',
+          role: 'System',
+          action: evalResult.status === 'approved_in_principle'
+            ? 'In-Principle Approved'
+            : evalResult.status === 'declined'
+            ? 'Declined'
+            : 'Referred to Review Queue',
+          details: evalResult.decisionReason
+        }
+      ],
+      version: 1,
+      createdAt: nowIso,
+      updatedAt: nowIso
+    }
+
+    createdApps.push(app)
+  })
+
+  saveToStorage(STORAGE_KEYS.APPLICATIONS, createdApps)
+  return createdApps
 }
 
 export const StorageService = {
@@ -761,8 +629,14 @@ export const StorageService = {
   getCustomers: () => getFromStorage<Record<string, CustomerProfile>>(STORAGE_KEYS.CUSTOMERS, INITIAL_CUSTOMERS),
   saveCustomers: (c: Record<string, CustomerProfile>) => saveToStorage(STORAGE_KEYS.CUSTOMERS, c),
 
-  getApplications: () => getFromStorage<Application[]>(STORAGE_KEYS.APPLICATIONS, INITIAL_APPLICATIONS),
+  getApplications: () => getFromStorage<Application[]>(STORAGE_KEYS.APPLICATIONS, []),
   saveApplications: (a: Application[]) => saveToStorage(STORAGE_KEYS.APPLICATIONS, a),
+  removeCustomerApplications: (customerId: string) => {
+    const apps = getFromStorage<Application[]>(STORAGE_KEYS.APPLICATIONS, [])
+    const filtered = apps.filter((a) => a.customerId !== customerId)
+    saveToStorage(STORAGE_KEYS.APPLICATIONS, filtered)
+    return filtered
+  },
 
   getPolicy: () => getFromStorage<CreditPolicy>(STORAGE_KEYS.POLICY, INITIAL_POLICY),
   savePolicy: (p: CreditPolicy) => saveToStorage(STORAGE_KEYS.POLICY, p),
@@ -770,9 +644,9 @@ export const StorageService = {
   getPolicyVersions: () => getFromStorage<PolicyVersionRecord[]>(STORAGE_KEYS.POLICY_VERSIONS, INITIAL_POLICY_VERSIONS),
   savePolicyVersions: (pv: PolicyVersionRecord[]) => saveToStorage(STORAGE_KEYS.POLICY_VERSIONS, pv),
 
-  getAuditLogs: () => getFromStorage<AuditLog[]>(STORAGE_KEYS.AUDIT_LOGS, INITIAL_AUDIT_LOGS),
+  getAuditLogs: () => getFromStorage<AuditLog[]>(STORAGE_KEYS.AUDIT_LOGS, []),
   addAuditLog: (log: Omit<AuditLog, 'id' | 'timestamp'>) => {
-    const logs = getFromStorage<AuditLog[]>(STORAGE_KEYS.AUDIT_LOGS, INITIAL_AUDIT_LOGS)
+    const logs = getFromStorage<AuditLog[]>(STORAGE_KEYS.AUDIT_LOGS, [])
     const newLog: AuditLog = {
       ...log,
       id: `AUD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -782,9 +656,9 @@ export const StorageService = {
     return newLog
   },
 
-  getNotifications: () => getFromStorage<AppNotification[]>(STORAGE_KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS),
+  getNotifications: () => getFromStorage<AppNotification[]>(STORAGE_KEYS.NOTIFICATIONS, []),
   addNotification: (n: Omit<AppNotification, 'id' | 'timestamp' | 'read'>) => {
-    const list = getFromStorage<AppNotification[]>(STORAGE_KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS)
+    const list = getFromStorage<AppNotification[]>(STORAGE_KEYS.NOTIFICATIONS, [])
     const newNotif: AppNotification = {
       ...n,
       id: `NOTIF-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -795,7 +669,7 @@ export const StorageService = {
     return newNotif
   },
   markNotificationRead: (id: string) => {
-    const list = getFromStorage<AppNotification[]>(STORAGE_KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS)
+    const list = getFromStorage<AppNotification[]>(STORAGE_KEYS.NOTIFICATIONS, [])
     const updated = list.map((n) => (n.id === id ? { ...n, read: true } : n))
     saveToStorage(STORAGE_KEYS.NOTIFICATIONS, updated)
   }

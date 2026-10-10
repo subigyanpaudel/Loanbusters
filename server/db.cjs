@@ -1,7 +1,7 @@
 // server/db.js
 const Database = require('better-sqlite3')
 const path = require('path')
-const { evaluateCreditApplication } = require('./creditEngine')
+const { evaluateCreditApplication } = require('./creditEngine.cjs')
 
 const DB_PATH = path.join(__dirname, '..', 'loan_rangers.db')
 const db = new Database(DB_PATH)
@@ -724,12 +724,20 @@ function processMultipleDemoApplications() {
     termMonths: 60
   }))
 
-  // Customer 4: Pooja Bhattarai -> NPR 2,800,000 on Suzuki Grand Vitara -> Referred for Senior Approver Review (exceeds NPR 2.5M authority)
+  // Customer 4: Pooja Bhattarai -> NPR 2,800,000 on BYD Atto 3 -> Referred for Senior Approver Review (exceeds NPR 2.5M authority)
   results.push(processLoanApplication({
     customerId: 'USR-CUST-004',
     quotationId: 'QUO-2026-104',
     requestedLoanAmount: 2800000,
     termMonths: 72
+  }))
+
+  // Customer 5: Rohan Shrestha -> NPR 2,100,000 on Tata Nexon EV -> Approved In-Principle
+  results.push(processLoanApplication({
+    customerId: 'USR-CUST-005',
+    quotationId: 'QUO-2026-103',
+    requestedLoanAmount: 2100000,
+    termMonths: 60
   }))
 
   return results
@@ -784,6 +792,10 @@ function getApplications() {
     createdAt: r.created_at,
     updatedAt: r.updated_at
   }))
+}
+
+function getApplicationsByCustomer(customerId) {
+  return getApplications().filter((a) => a.customerId === customerId)
 }
 
 function updateApplication(app) {
@@ -1076,6 +1088,7 @@ module.exports = {
   processLoanApplication,
   processMultipleDemoApplications,
   getApplications,
+  getApplicationsByCustomer,
   updateApplication,
   getCustomers,
   updateCustomerKyc,

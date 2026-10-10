@@ -16,13 +16,15 @@ import {
 import {
   StorageService,
   initializeStorageIfEmpty,
-  resetAllToDefaultData
+  resetAllToDefaultData,
+  processDemoApplicationsLocally
 } from '../services/storage'
 import {
   evaluateCreditApplication,
   calculateReducingBalanceEmi
 } from '../services/creditEngine'
 import { DEMO_SCENARIOS } from '../services/scenarioRunner'
+import { ApiService } from '../services/api'
 
 export type ActivePortal = 'customer' | 'admin' | 'dealer' | 'scenarios'
 export type AdminTab =
@@ -73,7 +75,10 @@ interface AppContextType {
     termMonths: number
     complianceFlagsPresent?: boolean
     ocrMismatch?: boolean
-  }) => { application: Application; duplicate: boolean }
+  }) => Promise<{ application: Application; duplicate: boolean }>
+
+  clearClientLoanProcessing: (customerId: string) => Promise<void>
+  processDemoApplications: () => Promise<void>
 
   officerApproveApplication: (applicationId: string, notes: string) => { success: boolean; error?: string }
   officerDeclineApplication: (applicationId: string, reason: string) => void
@@ -99,7 +104,7 @@ interface AppContextType {
 
   // Notifications & Audit
   markNotificationAsRead: (id: string) => void
-  resetSystemData: () => void
+  resetSystemData: () => Promise<void>
 
   // Scenarios Runner State
   scenarioResults: Record<number, DemoScenarioResult>
@@ -110,10 +115,6 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined)
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  useEffect(() => {
-    initializeStorageIfEmpty()
-  }, [])
-
   const [allUsers, setAllUsers] = useState<User[]>(() => StorageService.getUsers())
   const [currentUser, setCurrentUser] = useState<User>(() => StorageService.getCurrentUser())
   const [activePortal, setActivePortal] = useState<ActivePortal>('customer')
@@ -133,7 +134,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [scenarioResults, setScenarioResults] = useState<Record<number, DemoScenarioResult>>({})
 
-  // Update storage whenever states change
+  // Initialize SQLite connection on startup
+  useEffect(() => {
+    initializeStorageIfEmpty()
+
+    // Fetch initial state from SQLite backend
+    const loadFromSqlite = async () => {
+      try {
+        const [apps, custs, dlrs, vehs, quots, pol, pvers, logs, notifs] = await Promise.all([
+          ApiService.getApplications(),
+          ApiService.getCustomers(),
+          ApiService.getDealers(),
+          ApiService.getVehicles(),
+          ApiService.getQuotations(),
+          ApiService.getPolicy(),
+          ApiService.getPolicyVersions(),
+          ApiService.getAuditLogs(),
+          ApiService.getNotifications()
+        ])
+        if (apps) setApplications(apps)
+        if (custs && Object.keys(custs).length > 0) setCustomers(custs)
+        if (dlrs && dlrs.length > 0) setDealers(dlrs)
+        if (vehs && vehs.length > 0) setVehicles(vehs)
+        if (quots && quots.length > 0) setQuotations(quots)
+        if (pol && pol.version) setPolicy(pol)
+        if (pvers && pvers.length > 0) setPolicyVersions(pvers)
+        if (logs) setAuditLogs(logs)
+        if (notifs) setNotifications(notifs)
+      } catch (e) {
+        console.warn('SQLite backend offline or syncing with localStorage fallback:', e)
+      }
+    }
+    loadFromSqlite()
+  }, [])
+
   const saveApps = (newApps: Application[]) => {
     setApplications(newApps)
     StorageService.saveApplications(newApps)
@@ -150,7 +184,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentUser(targetUser)
     StorageService.setCurrentUser(targetUser)
 
-    // Route user to appropriate portal
     if (role === 'customer') {
       setActivePortal('customer')
       setCustomerTab('dashboard')
@@ -171,6 +204,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       details
     })
     setAuditLogs(StorageService.getAuditLogs())
+    ApiService.addAuditLog({
+      actorName: currentUser.name,
+      actorRole: currentUser.role,
+      action,
+      applicationId: appId,
+      details
+    }).catch(() => {})
   }
 
   const sendNotification = (
@@ -192,8 +232,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setNotifications(StorageService.getNotifications())
   }
 
-  // 1. Submit New Application
-  const submitNewApplication = (data: {
+  // Clear previous loan processing for a specific client
+  const clearClientLoanProcessing = async (customerId: string) => {
+    try {
+      await ApiService.removePreviousLoanProcessing(customerId)
+    } catch (e) {}
+    const updated = applications.filter((a) => a.customerId !== customerId)
+    saveApps(updated)
+    logAction('REMOVE_PREVIOUS_LOAN_PROCESSING', `Cleared previous loan processing for customer ${customerId}`)
+  }
+
+  // Dynamically process demo loan applications for multiple user names
+  const processDemoApplications = async () => {
+    try {
+      const res = await ApiService.processDemoApplications()
+      if (res && res.applications) {
+        setApplications(res.applications)
+        StorageService.saveApplications(res.applications)
+        return
+      }
+    } catch (e) {
+      console.warn('Using local dynamic processing engine:', e)
+    }
+    const created = processDemoApplicationsLocally()
+    setApplications(created)
+  }
+
+  // 1. Submit New Application (removes previous loan processing for this client)
+  const submitNewApplication = async (data: {
     customerId: string
     quotationId: string
     requestedLoanAmount: number
@@ -201,24 +267,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     complianceFlagsPresent?: boolean
     ocrMismatch?: boolean
   }) => {
+    // 1. Remove previous loan processing for this client!
+    await clearClientLoanProcessing(data.customerId)
+
+    try {
+      const serverApp = await ApiService.submitApplication(data)
+      if (serverApp && serverApp.id) {
+        const updated = [serverApp, ...applications.filter((a) => a.customerId !== data.customerId)]
+        saveApps(updated)
+        return { application: serverApp, duplicate: false }
+      }
+    } catch (e) {
+      console.warn('SQLite API call failed, falling back to local engine:', e)
+    }
+
     const cust = customers[data.customerId] || customers['USR-CUST-001']
     const quo = quotations.find((q) => q.id === data.quotationId) || quotations[0]
-
-    // Rule 13: Check duplicate active applications
-    const existingActive = applications.find(
-      (a) =>
-        a.customerId === cust.id &&
-        ['quotation_confirmed', 'pending_verification', 'appraisal_in_progress', 'referred', 'pending', 'approved_in_principle'].includes(a.status)
-    )
-
-    if (existingActive) {
-      logAction(
-        'DUPLICATE_APPLICATION_BLOCKED',
-        `Duplicate submission blocked for ${cust.fullName}. Active application ${existingActive.id} maintained.`,
-        existingActive.id
-      )
-      return { application: existingActive, duplicate: true }
-    }
 
     const evalResult = evaluateCreditApplication({
       customer: cust,
@@ -293,14 +357,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           actor: cust.fullName,
           role: 'Customer',
           action: 'Consent Recorded',
-          details: `Digital consent recorded under ${cust.consentVersion || 'v2.1-2026'}. Bureau query authorised.`
+          details: `Digital consent recorded under ${cust.consentVersion || 'v2.1-2026'}.`
         },
         {
           timestamp: nowIso,
           actor: cust.fullName,
           role: 'Customer',
           action: 'Application Submitted',
-          details: `Submitted loan application for Rs. ${data.requestedLoanAmount.toLocaleString('en-IN')} for ${quo.make} ${quo.model}.`
+          details: `Submitted loan application for Rs. ${data.requestedLoanAmount.toLocaleString('en-IN')}.`
         },
         {
           timestamp: nowIso,
@@ -321,7 +385,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updatedAt: nowIso
     }
 
-    const updatedApps = [newApp, ...applications]
+    const updatedApps = [newApp, ...applications.filter((a) => a.customerId !== data.customerId)]
     saveApps(updatedApps)
 
     logAction(
@@ -329,23 +393,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       `Application ${appId} submitted by ${cust.fullName}. Initial automated outcome: ${evalResult.status.toUpperCase()}.`,
       appId
     )
-
-    if (evalResult.status === 'approved_in_principle') {
-      sendNotification(
-        'customer',
-        'Preliminary Auto Loan Approved',
-        `Application ${appId} has received In-Principle Approval for Rs. ${data.requestedLoanAmount.toLocaleString('en-IN')}.`,
-        appId,
-        cust.id
-      )
-    } else if (evalResult.status === 'referred') {
-      sendNotification(
-        'officer',
-        'New Referral in Review Queue',
-        `Application ${appId} referred to Credit Officer for manual assessment.`,
-        appId
-      )
-    }
 
     return { application: newApp, duplicate: false }
   }
@@ -355,7 +402,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const app = applications.find((a) => a.id === applicationId)
     if (!app) return { success: false, error: 'Application not found' }
 
-    // Enforce delegated authority: standard officer <= NPR 2,500,000; senior <= NPR 5,000,000
     const officerLimit = currentUser.officerAuthorityLimit || 2500000
     if (app.requestedLoanAmount > officerLimit) {
       const err = `Approval denied: Requested loan Rs. ${app.requestedLoanAmount.toLocaleString('en-IN')} exceeds your delegated authority limit (Rs. ${officerLimit.toLocaleString('en-IN')}). Escalate to Senior Approver.`
@@ -402,6 +448,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const updated = applications.map((a) => (a.id === applicationId ? updatedApp : a))
     saveApps(updated)
+    ApiService.updateApplication(updatedApp).catch(() => {})
 
     logAction('OFFICER_APPROVAL', `Application ${applicationId} approved by ${currentUser.name}.`, applicationId)
     sendNotification(
@@ -453,14 +500,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const updated = applications.map((a) => (a.id === applicationId ? updatedApp : a))
     saveApps(updated)
+    ApiService.updateApplication(updatedApp).catch(() => {})
     logAction('OFFICER_DECLINE', `Application ${applicationId} declined with recorded reason: ${reason}`, applicationId)
-    sendNotification(
-      'customer',
-      'Loan Application Declined',
-      `Your application ${applicationId} has been reviewed and declined. Reason: ${reason}`,
-      applicationId,
-      app.customerId
-    )
   }
 
   const officerRequestInformation = (applicationId: string, documentName: string, reason: string) => {
@@ -506,14 +547,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const updated = applications.map((a) => (a.id === applicationId ? updatedApp : a))
     saveApps(updated)
+    ApiService.updateApplication(updatedApp).catch(() => {})
     logAction('REQUEST_INFORMATION', `Requested ${documentName} for ${applicationId}`, applicationId)
-    sendNotification(
-      'customer',
-      'Action Required: Document Requested',
-      `Credit Officer requested ${documentName} for application ${applicationId}.`,
-      applicationId,
-      app.customerId
-    )
   }
 
   const officerEscalateApplication = (applicationId: string, notes: string) => {
@@ -550,13 +585,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const updated = applications.map((a) => (a.id === applicationId ? updatedApp : a))
     saveApps(updated)
+    ApiService.updateApplication(updatedApp).catch(() => {})
     logAction('ESCALATE_APPLICATION', `Application ${applicationId} escalated to Senior Approver`, applicationId)
-    sendNotification(
-      'officer',
-      'High-Priority Escalated Application',
-      `Application ${applicationId} escalated by ${currentUser.name}. Requires Senior Authority review.`,
-      applicationId
-    )
   }
 
   const officerProposeRevisedTerms = (
@@ -599,7 +629,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           officerName: currentUser.name,
           timestamp: nowIso,
           actionType: 'Propose Revised Terms',
-          note: `Proposed Rs. ${revisedAmount.toLocaleString('en-IN')} for ${revisedTerm}m to satisfy LTV/DSR policy limits. ${notes}`
+          note: `Proposed Rs. ${revisedAmount.toLocaleString('en-IN')} for ${revisedTerm}m. ${notes}`
         }
       ],
       timeline: [
@@ -609,7 +639,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           actor: currentUser.name,
           role: 'Credit Officer',
           action: 'Revised Terms Proposed',
-          details: `Proposed loan Rs. ${revisedAmount.toLocaleString('en-IN')} (${revisedTerm}m, EMI Rs. ${revisedEmi.toLocaleString('en-IN')}). Customer consent required.`
+          details: `Proposed loan Rs. ${revisedAmount.toLocaleString('en-IN')} (${revisedTerm}m).`
         }
       ],
       updatedAt: nowIso
@@ -617,17 +647,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const updated = applications.map((a) => (a.id === applicationId ? updatedApp : a))
     saveApps(updated)
+    ApiService.updateApplication(updatedApp).catch(() => {})
     logAction('PROPOSE_REVISED_TERMS', `Proposed revised terms for ${applicationId}`, applicationId)
-    sendNotification(
-      'customer',
-      'Revised Loan Terms Proposed',
-      `Credit Officer has proposed adjusted loan terms for application ${applicationId} to meet banking policy guidelines.`,
-      applicationId,
-      app.customerId
-    )
   }
 
-  // Customer Upload Document (Resolves request & triggers revalidation)
   const customerUploadDocument = (
     applicationId: string,
     docName: string,
@@ -670,16 +693,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const updated = applications.map((a) => (a.id === applicationId ? updatedApp : a))
     saveApps(updated)
+    ApiService.updateApplication(updatedApp).catch(() => {})
     logAction('CUSTOMER_UPLOAD_DOCUMENT', `Customer uploaded ${docName} for ${applicationId}`, applicationId)
-    sendNotification(
-      'officer',
-      'Documents Received for Review',
-      `Customer uploaded requested documents for application ${applicationId}. Ready for revalidation.`,
-      applicationId
-    )
   }
 
-  // Retry Bureau Check
   const retryBureauCheck = (applicationId: string) => {
     const app = applications.find((a) => a.id === applicationId)
     if (!app) return
@@ -687,7 +704,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const cust = customers[app.customerId] || customers['USR-CUST-001']
     const quo = quotations.find((q) => q.id === app.quotationId) || quotations[0]
 
-    // Simulate successful bureau connection on manual retry
     const evalResult = evaluateCreditApplication({
       customer: cust,
       quotation: quo,
@@ -714,7 +730,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           actor: 'Credit Bureau Integration',
           role: 'System',
           action: 'Bureau Connection Restored',
-          details: 'Simulated bureau query executed successfully. Credit checks rerun.'
+          details: 'Simulated bureau query executed successfully.'
         }
       ],
       updatedAt: nowIso
@@ -722,10 +738,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const updated = applications.map((a) => (a.id === applicationId ? updatedApp : a))
     saveApps(updated)
+    ApiService.updateApplication(updatedApp).catch(() => {})
     logAction('BUREAU_RETRY_SUCCESS', `Bureau connection re-established for ${applicationId}`, applicationId)
   }
 
-  // Dealer Action: Create Quotation
   const createQuotation = (quotationData: Omit<Quotation, 'id' | 'status'>): Quotation => {
     const newQuotation: Quotation = {
       ...quotationData,
@@ -735,14 +751,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updated = [newQuotation, ...quotations]
     setQuotations(updated)
     StorageService.saveQuotations(updated)
-    logAction(
-      'CREATE_QUOTATION',
-      `Quotation ${newQuotation.id} created by ${newQuotation.dealerName} for ${newQuotation.make} ${newQuotation.model} (Rs. ${newQuotation.eligiblePrice.toLocaleString('en-IN')})`
-    )
+    ApiService.addQuotation(quotationData).catch(() => {})
     return newQuotation
   }
 
-  // Admin Actions: Vehicle Catalogue & Dealers
   const addVehicle = (v: Omit<Vehicle, 'id'>) => {
     const newVeh: Vehicle = {
       ...v,
@@ -751,14 +763,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updated = [...vehicles, newVeh]
     setVehicles(updated)
     StorageService.saveVehicles(updated)
-    logAction('ADD_CATALOGUE_VEHICLE', `Added vehicle ${newVeh.make} ${newVeh.model} ${newVeh.variant} to catalogue`)
+    ApiService.addVehicle(v).catch(() => {})
   }
 
   const toggleVehicleStatus = (id: string) => {
     const updated = vehicles.map((v) => (v.id === id ? { ...v, active: !v.active } : v))
     setVehicles(updated)
     StorageService.saveVehicles(updated)
-    logAction('TOGGLE_VEHICLE_STATUS', `Toggled vehicle ${id} active status`)
+    ApiService.toggleVehicle(id).catch(() => {})
   }
 
   const addDealer = (d: Omit<Dealer, 'id'>) => {
@@ -769,17 +781,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updated = [...dealers, newDlr]
     setDealers(updated)
     StorageService.saveDealers(updated)
-    logAction('ADD_APPROVED_DEALER', `Added approved dealer ${newDlr.name}`)
+    ApiService.addDealer(d).catch(() => {})
   }
 
   const toggleDealerStatus = (id: string) => {
     const updated = dealers.map((d) => (d.id === id ? { ...d, active: !d.active } : d))
     setDealers(updated)
     StorageService.saveDealers(updated)
-    logAction('TOGGLE_DEALER_STATUS', `Toggled dealer ${id} active status`)
+    ApiService.toggleDealer(id).catch(() => {})
   }
 
-  // Maker-Checker Dual Approval Workflow
   const proposePolicyChange = (changes: Partial<CreditPolicy>, justification: string) => {
     const updatedPolicy: CreditPolicy = {
       ...policy,
@@ -793,25 +804,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setPolicy(updatedPolicy)
     StorageService.savePolicy(updatedPolicy)
-    logAction(
-      'POLICY_CHANGE_PROPOSED',
-      `Maker (${currentUser.name}) proposed policy modifications: ${justification}`
-    )
-    sendNotification(
-      'admin',
-      'Dual Authorisation Required: Policy Proposal',
-      `${currentUser.name} has submitted a credit policy modification proposal requiring Checker approval.`
-    )
+    ApiService.savePolicy(updatedPolicy).catch(() => {})
   }
 
   const approvePolicyChange = (notes: string) => {
     if (!policy.proposedChanges) {
       return { success: false, error: 'No pending policy changes found.' }
     }
-    // Maker cannot approve own changes
     if (policy.proposedChanges.proposerId === currentUser.id) {
       const err = 'Segregation of Duties Violation: Maker cannot approve their own proposed changes. A second authorised administrator must review.'
-      logAction('DUAL_APPROVAL_VIOLATION_BLOCKED', err)
       return { success: false, error: err }
     }
 
@@ -839,11 +840,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setPolicyVersions(updatedVersions)
     StorageService.savePolicy(newPolicy)
     StorageService.savePolicyVersions(updatedVersions)
+    ApiService.savePolicy(newPolicy).catch(() => {})
+    ApiService.addPolicyVersion(versionRecord).catch(() => {})
 
-    logAction(
-      'POLICY_CHANGE_APPROVED',
-      `Policy ${newVersionTag} approved by Checker (${currentUser.name}). Maker: ${policy.proposedChanges.proposerName}.`
-    )
     return { success: true }
   }
 
@@ -855,18 +854,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setPolicy(updatedPolicy)
     StorageService.savePolicy(updatedPolicy)
-    logAction(
-      'POLICY_CHANGE_REJECTED',
-      `Policy proposal rejected by ${currentUser.name}. Reason: ${reason}`
-    )
+    ApiService.savePolicy(updatedPolicy).catch(() => {})
   }
 
   const markNotificationAsRead = (id: string) => {
     StorageService.markNotificationRead(id)
     setNotifications(StorageService.getNotifications())
+    ApiService.markNotificationRead(id).catch(() => {})
   }
 
-  const resetSystemData = () => {
+  // Complete Reset: Wipes SQLite and local state
+  const resetSystemData = async () => {
+    try {
+      await ApiService.resetDb()
+    } catch (e) {
+      console.warn('SQLite reset failed:', e)
+    }
     resetAllToDefaultData()
     setAllUsers(StorageService.getUsers())
     setCurrentUser(StorageService.getCurrentUser())
@@ -874,11 +877,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDealers(StorageService.getDealers())
     setQuotations(StorageService.getQuotations())
     setCustomers(StorageService.getCustomers())
-    setApplications(StorageService.getApplications())
+    setApplications([])
     setPolicy(StorageService.getPolicy())
     setPolicyVersions(StorageService.getPolicyVersions())
-    setAuditLogs(StorageService.getAuditLogs())
-    setNotifications(StorageService.getNotifications())
+    setAuditLogs([])
+    setNotifications([])
     setScenarioResults({})
   }
 
@@ -937,6 +940,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         auditLogs,
         notifications,
         submitNewApplication,
+        clearClientLoanProcessing,
+        processDemoApplications,
         officerApproveApplication,
         officerDeclineApplication,
         officerRequestInformation,

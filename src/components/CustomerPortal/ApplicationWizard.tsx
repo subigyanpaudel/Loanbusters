@@ -81,9 +81,9 @@ export const ApplicationWizard: React.FC = () => {
     }
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setSubmissionError(null)
-    const result = submitNewApplication({
+    const result = await submitNewApplication({
       customerId: customer.id,
       quotationId: selectedQuotation.id,
       requestedLoanAmount,
